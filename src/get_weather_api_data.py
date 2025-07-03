@@ -12,7 +12,7 @@ TIMEZONE = "Europe/Amsterdam"
 
 parent_dir =  os.path.dirname(os.path.dirname(os.path.abspath(__file__))) # go up 2 directories
 
-def get_hourly_forecast(num_hours=72, past_hours=0):
+def get_hourly_forecast(num_hours=72, past_hours=72):
     """
     Fetches hourly weather forecast data for The Hague using Open-Meteo API.
     Can also fetch some recent historical hourly data if past_hours > 0.
@@ -82,7 +82,7 @@ def get_hourly_forecast(num_hours=72, past_hours=0):
 
             })
 
-            # Convert wind direction from degrees to cardinal/ordinal directions
+            # Convert the wind direction from degrees to cardinal/ordinal directions
             df['wind_direction_cardinal'] = df['wind_direction_10m'].apply(lambda d:
                                                                            'N' if (d >= 337.5 or d < 22.5) else
                                                                            'NE' if (d >= 22.5 and d < 67.5) else
