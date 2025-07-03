@@ -29,29 +29,27 @@ def get_hourly_forecast(num_hours=72, past_hours=0):
         "precipitation_unit": "inch" if os.getenv("WEATHER_UNITS") == "imperial" else "mm",
         "timezone": TIMEZONE,
         "forecast_hours": num_hours,
-        "past_hours": past_hours  # Fetch past hourly data as well
+        "past_hours": past_hours
     }
 
     try:
         response = requests.get(OPENMETEO_API_URL, params=params)
-        response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
+        response.raise_for_status()
         data = response.json()
 
         if not data or 'hourly' not in data:
             print("No hourly data found in response.")
             return pd.DataFrame()
 
-        hourly_data = data['hourly']
-
-        # Convert to DataFrame
-        df = pd.DataFrame(hourly_data)
+        df = pd.DataFrame(data['hourly'])
 
         if not df.empty:
-            # Rename 'time' column to 'timestamp' for consistency
-            df = df.rename(columns={'time': 'timestamp'})
-            df['timestamp'] = pd.to_datetime(df['timestamp'], utc=True)  # Ensure UTC from Open-Meteo
 
-            # Map weather codes to descriptions (optional, but makes data more readable)
+            df = df.rename(columns={'time': 'timestamp'})
+            df['timestamp'] = pd.to_datetime(df['timestamp'], utc=True)
+
+            # Map weather codes to descriptions
+            # Add more from https://www.meteosource.com/wiki/weather-codes
             df['weather_description'] = df['weather_code'].map({
                 0: 'Clear sky',
                 1: 'Mostly clear',
@@ -81,10 +79,10 @@ def get_hourly_forecast(num_hours=72, past_hours=0):
                 95: 'Thunderstorm: Slight or moderate',
                 96: 'Thunderstorm with slight hail',
                 99: 'Thunderstorm with heavy hail',
-                # Add more as needed from https://www.meteosource.com/wiki/weather-codes
+
             })
 
-            # Convert wind direction from degrees to cardinal/ordinal directions (optional)
+            # Convert wind direction from degrees to cardinal/ordinal directions
             df['wind_direction_cardinal'] = df['wind_direction_10m'].apply(lambda d:
                                                                            'N' if (d >= 337.5 or d < 22.5) else
                                                                            'NE' if (d >= 22.5 and d < 67.5) else
@@ -111,15 +109,14 @@ def get_hourly_forecast(num_hours=72, past_hours=0):
 
 def get_current_weather():
     """
-    Fetches current weather data for The Hague.
-    Open-Meteo's hourly forecast always includes the current hour, so this
-    function essentially just extracts the first row of the hourly forecast.
+    Fetches current weather data for the location.
+    Extracts the first row of the hourly forecast.
     """
     print("Fetching current weather from hourly forecast...")
     hourly_df = get_hourly_forecast(num_hours=1, past_hours=0)
     if not hourly_df.empty:
         print("Successfully retrieved current weather.")
-        return hourly_df.iloc[0].to_frame().T  # Return first row as a DataFrame
+        return hourly_df.iloc[0].to_frame().T
     return pd.DataFrame()
 
 
